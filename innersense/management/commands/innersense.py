@@ -38,6 +38,7 @@ size_chart = {'32B': 'S',
 
 class Command(BaseCommand):
     '''
+        Excel ETL Script
     '''
 
 ################################################################################
@@ -46,11 +47,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         '''
+            Take the excel file as an argument.
         '''
         parser.add_argument('file')
 
     def handle(self, *args, **options):
         '''
+            Extract
+            Transform
+            Load
         '''
         file = options['file']
 
@@ -66,6 +71,7 @@ class Command(BaseCommand):
 
     def _extract(self, file):
         '''
+            Read Excel file, convert to a list of dicts.
         '''
         book = xlrd.open_workbook(file)
         sheet = book.sheet_by_index(0)
@@ -86,6 +92,8 @@ class Command(BaseCommand):
 
     def _validate_sku(self, sku):
         '''
+            Split ISP from IMP.
+            Both are mutually exclusive.
         '''
         type = sku[:-3]
         code = sku[-3:]
@@ -102,6 +110,7 @@ class Command(BaseCommand):
 
     def _format_package_one(self, sku):
         '''
+            Transformation for format :: \D\D\D\d\d\d\D_\D\D\D\d\d\d\D-\d\d\D
         ''' 
         sku_list = sku.split('-')
         sku = sku_list[0].split('_')
@@ -113,6 +122,7 @@ class Command(BaseCommand):
 
     def _format_package_two(self, sku):
         '''
+            Transformation for format :: \D\D\D\d\d\d\D_\d\D-\d\d\D
         '''
         sku_list = sku.split('-')
         sku = sku_list[0].split('_')
@@ -124,6 +134,7 @@ class Command(BaseCommand):
 
     def _format_package_three(self, sku):
         '''
+            Transformation for format :: \D\D\D\d\d\d\D_\d\d_\d\d-\D
         '''
         sku_list = sku.split('-')
         sku = sku_list[0].split('_')
@@ -136,6 +147,7 @@ class Command(BaseCommand):
 
     def _format_package_four(self, sku):
         '''
+            Transformation for format :: \D\D\D\d\d\d\_\d\d_\d\D-\D
         '''
         sku_list = sku.split('-')
         sku = sku_list[0].split('_')
@@ -148,6 +160,7 @@ class Command(BaseCommand):
 
     def _format_product_color(self, sku):
         '''
+            Transformation for format :: \D\D\D\d\d\d\D-\d\d\D
         '''
         sku_list = sku.split('-')
         sku = sku_list[0]
@@ -160,6 +173,7 @@ class Command(BaseCommand):
 
     def _format_product(self, sku):
         '''
+            Transformation for format :: \D\D\D\d\d\d-\d\d\D
         '''
         sku_list = sku.split('-')
 
@@ -167,6 +181,10 @@ class Command(BaseCommand):
 
     def _transform(self, dict_list):
         '''
+            Transform Combo SKUs into individual Product SKUs.
+            Convert Date String to Datetime Object.
+            Handle cast to float ValueErrors.
+            Remove special characters.
         '''
         for obj in dict_list:
             # Order
@@ -261,6 +279,7 @@ class Command(BaseCommand):
 
     def _upsert_package(self, sku):
         '''
+            Create or Update Package Schema.
         '''
         try:
             # Update
@@ -276,6 +295,7 @@ class Command(BaseCommand):
 
     def _upsert_product(self, product):
         '''
+            Create or Update Product Schema.
         '''
         try:
             # Update
@@ -291,6 +311,7 @@ class Command(BaseCommand):
 
     def _upsert_sku(self, sku):
         '''
+            Deflate Combos into individual Products.
         '''
         if sku:
             if type(sku[0]) == tuple:
@@ -301,6 +322,7 @@ class Command(BaseCommand):
 
     def _upsert_customer(self, obj):
         '''
+            Create or Update Customer Schema.
         '''
         try:
             # Update
@@ -316,6 +338,7 @@ class Command(BaseCommand):
 
     def _upsert_order(self, obj, package, customer):
         '''
+            Create or Update Order Schema.
         '''
         try:
             # Update
@@ -331,6 +354,7 @@ class Command(BaseCommand):
 
     def _upsert_invoice(self, obj, order):
         '''
+            Create or Update Invoice Schema.
         '''
         try:
             # Update
@@ -346,6 +370,7 @@ class Command(BaseCommand):
 
     def _load(self, dict_list):
         '''
+            Load Function.
         '''
         for obj in dict_list:
             try:
