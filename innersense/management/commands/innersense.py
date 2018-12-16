@@ -99,18 +99,18 @@ class Command(BaseCommand):
         code = sku[-3:]
 
         if type == 'ISP':
-            if code == '003' or code == '004':
+            if code in ('003', '004'):
                 return 'IMP' + code
 
         if type == 'IMP':
-            if code != '003' or code != '004':
+            if code not in ('003', '004'):
                 return 'ISP' + code
 
         return sku
 
     def _format_package_one(self, sku):
         '''
-            Transformation for format :: \D\D\D\d\d\d\D_\D\D\D\d\d\d\D-\d\d\D
+            Transformation for format :: \D\D\D\d\d\d\D_\D\D\D\d\d\d\D-\d\d\D & \D\D\D\d\d\d\D_\D\D\D\d\d\d\D-\D
         ''' 
         sku_list = sku.split('-')
         sku = sku_list[0].split('_')
@@ -167,7 +167,7 @@ class Command(BaseCommand):
         if sku.startswith('ISBP'):
             bra_size = sku_list[1].replace(' ', '')
             panty_size = size_chart.get(bra_size)
-            return ('ISB' + sku[-4:-1], sku[-1], bra_size), ('ISP' + sku[-4:-1], sku[-1], panty_size)
+            return (self._validate_sku('ISB' + sku[-4:-1]), sku[-1], bra_size), (self._validate_sku('ISP' + sku[-4:-1]), sku[-1], panty_size)
         else:
             return self._validate_sku(sku[:-1]), sku[-1], sku_list[1].replace(' ', '')
 
@@ -217,6 +217,12 @@ class Command(BaseCommand):
 
             # Combos
             #
+            SKU_PATTERN = re.compile('\D\D\D\d\d\d\D_\D\D\D\d\d\d\D-\D')
+            match = SKU_PATTERN.search(sku)
+            if match:
+                obj[sku] = self._format_package_one(sku)
+                continue
+
             SKU_PATTERN = re.compile('\D\D\D\d\d\d\D_\D\D\D\d\d\d\D-\d\d\D')
             match = SKU_PATTERN.search(sku)
             if match:
@@ -316,7 +322,7 @@ class Command(BaseCommand):
         if sku:
             if type(sku[0]) == tuple:
                 for value in sku:
-                    return self._upsert_sku(value)
+                    yield self._upsert_product(value)
             else:
                 yield self._upsert_product(sku)
 
